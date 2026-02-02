@@ -2,14 +2,14 @@
 
 namespace Smolblog\Core\Site\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
+use Cavatappi\Foundation\Exceptions\InvalidValueProperties;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Site\Events\SiteDetailsUpdated;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Foundation\Exceptions\InvalidValueProperties;
-use Smolblog\Test\SiteTestBase;
+use Smolblog\Core\Test\SiteTestBase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class UpdateSiteDetailsTest extends SiteTestBase {
 	public function testHappyPath() {
 		$command = new UpdateSiteDetails(
@@ -28,7 +28,7 @@ final class UpdateSiteDetailsTest extends SiteTestBase {
 			aggregateId: $command->siteId,
 			displayName: 'New Site',
 			description: 'I shoulda done this like a million years ago.',
-			pictureId: $command->pictureId
+			pictureId: $command->pictureId,
 		));
 
 		$this->app->execute($command);

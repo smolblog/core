@@ -2,8 +2,8 @@
 
 namespace Smolblog\Core\Content\Types\Article;
 
+use Cavatappi\Foundation\Fields\Markdown;
 use Smolblog\Core\Content\Entities\ContentType;
-use Smolblog\Foundation\Value\Fields\Markdown;
 
 /**
  * A more longform piece of writing with a title.
@@ -20,8 +20,7 @@ readonly class Article extends ContentType {
 	public function __construct(
 		public string $title,
 		public Markdown $text,
-	) {
-	}
+	) {}
 
 	/**
 	 * Provide the title.

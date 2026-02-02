@@ -2,15 +2,16 @@
 
 namespace Smolblog\Core\Channel\Services;
 
+use Cavatappi\Foundation\Registry\Registry;
+use Cavatappi\Foundation\Registry\ServiceRegistryKit;
+use Cavatappi\Foundation\Service;
 use Psr\Container\ContainerInterface;
-use Smolblog\Foundation\Service\Registry\Registry;
-use Smolblog\Foundation\Service\Registry\RegistryKit;
 
 /**
  * Register ChannelHandler services.
  */
-class ChannelHandlerRegistry implements Registry {
-	use RegistryKit;
+class ChannelHandlerRegistry implements Registry, Service {
+	use ServiceRegistryKit;
 
 	/**
 	 * This registry handles ChannelHandlers

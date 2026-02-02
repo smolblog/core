@@ -2,15 +2,16 @@
 
 namespace Smolblog\Core\Connection\Services;
 
+use Cavatappi\Foundation\Registry\Registry;
+use Cavatappi\Foundation\Registry\ServiceRegistryKit;
+use Cavatappi\Foundation\Service;
 use Psr\Container\ContainerInterface;
-use Smolblog\Foundation\Service\Registry\Registry;
-use Smolblog\Foundation\Service\Registry\RegistryKit;
 
 /**
  * Class to handle storing Connectors for use later.
  */
-class ConnectionHandlerRegistry implements Registry {
-	use RegistryKit;
+class ConnectionHandlerRegistry implements Registry, Service {
+	use ServiceRegistryKit;
 
 	/**
 	 * This Registry is for Connectors.

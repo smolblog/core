@@ -2,21 +2,18 @@
 
 namespace Smolblog\Core\Channel\Services;
 
+use Cavatappi\Foundation\DomainEvent\EventListenerService;
+use Cavatappi\Foundation\DomainEvent\ProjectionListener;
+use Cavatappi\Foundation\Factories\UuidFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Ramsey\Uuid\UuidInterface;
 use Smolblog\Core\Channel\Data\ChannelRepo;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Entities\ContentChannelEntry;
 use Smolblog\Core\Channel\Events\ContentPushedToChannel;
 use Smolblog\Core\Channel\Events\ContentPushFailed;
-use Smolblog\Core\Channel\Events\ContentPushStarted;
 use Smolblog\Core\Channel\Events\ContentPushSucceeded;
-use Smolblog\Core\Channel\Jobs\ContentPushJob;
-use Smolblog\Foundation\Service\Event\EventListenerService;
-use Smolblog\Foundation\Service\Event\ProjectionListener;
-use Smolblog\Foundation\Service\Job\JobManager;
-use Smolblog\Foundation\Value\Fields\Identifier;
-use Smolblog\Foundation\Value\Fields\RandomIdentifier;
 
 /**
  * Provides a set of good defaults for projection channel handlers.
@@ -45,26 +42,25 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 	public function __construct(
 		private EventDispatcherInterface $eventBus,
 		private ChannelRepo $channels,
-	) {
-	}
+	) {}
 
 	/**
 	 * Dispatch the push event.
 	 *
-	 * @param Content    $content Content object to push.
-	 * @param Channel    $channel Channel to push object to.
-	 * @param Identifier $userId  ID of the user who initiated the push.
+	 * @param Content       $content Content object to push.
+	 * @param Channel       $channel Channel to push object to.
+	 * @param UuidInterface $userId  ID of the user who initiated the push.
 	 * @return void
 	 */
 	public function pushContentToChannel(
 		Content $content,
 		Channel $channel,
-		Identifier $userId
+		UuidInterface $userId,
 	): void {
-		$processId = new RandomIdentifier();
+		$processId = UuidFactory::random();
 		$startEvent = new (static::PUSH_EVENT)(
 			content: $content,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			userId: $userId,
 			aggregateId: $content->siteId,
 			processId: $processId,
@@ -76,11 +72,11 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 	 * Handle the push event
 	 *
 	 * @param ContentPushedToChannel $event          Content push event to handle.
-	 * @param Identifier|null        $regenerationId Optional ID for the current regeneration process.
+	 * @param UuidInterface|null     $regenerationId Optional ID for the current regeneration process.
 	 * @return void
 	 */
 	#[ProjectionListener]
-	public function handlePushEvent(ContentPushedToChannel $event, ?Identifier $regenerationId = null): void {
+	public function handlePushEvent(ContentPushedToChannel $event, ?UuidInterface $regenerationId = null): void {
 		$channel = $this->channels->channelById($event->channelId);
 		if (!isset($channel) || $channel?->handler != static::getConfiguration()->key) {
 			// Not necessarily an error; we're handling a generic event. But either way, we're done here.
@@ -88,7 +84,7 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 		}
 
 		$processId = $regenerationId ?? $event->processId;
-		$processId ??= new RandomIdentifier();
+		$processId ??= UuidFactory::random();
 
 		try {
 			$result = $this->project(
@@ -100,7 +96,7 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 		} catch (ContentPushException $exc) {
 			$this->eventBus->dispatch(new ContentPushFailed(
 				contentId: $event->content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $processId,
 				message: $exc->getMessage(),
 				userId: $event->userId,
@@ -112,7 +108,7 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 
 		$this->eventBus->dispatch(new ContentPushSucceeded(
 			contentId: $event->content->id,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			processId: $processId,
 			url: $result->url,
 			userId: $event->userId,
@@ -126,16 +122,16 @@ abstract class ProjectionChannelHandler implements ChannelHandler, EventListener
 	 *
 	 * @throws ContentPushFailure On failure.
 	 *
-	 * @param Content    $content   Content object to push.
-	 * @param Channel    $channel   Channel to push object to.
-	 * @param Identifier $userId    ID of the user who initiated the push.
-	 * @param Identifier $processId ID of this particular push or regeneration process.
+	 * @param Content       $content   Content object to push.
+	 * @param Channel       $channel   Channel to push object to.
+	 * @param UuidInterface $userId    ID of the user who initiated the push.
+	 * @param UuidInterface $processId ID of this particular push or regeneration process.
 	 * @return ContentChannelEntry Information about the successfully completed push.
 	 */
 	abstract protected function project(
 		Content $content,
 		Channel $channel,
-		Identifier $userId,
-		?Identifier $processId
+		UuidInterface $userId,
+		?UuidInterface $processId,
 	): ContentChannelEntry;
 }

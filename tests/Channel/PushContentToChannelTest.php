@@ -2,33 +2,30 @@
 
 namespace Smolblog\Core\Channel\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
+use Cavatappi\Foundation\Factories\HttpMessageFactory;
+use Cavatappi\Foundation\Factories\UuidFactory;
+use Cavatappi\Foundation\Fields\Markdown;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Channel\Entities\BasicChannel;
-use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Entities\ContentChannelEntry;
 use Smolblog\Core\Channel\Events\ContentPushedToChannel;
 use Smolblog\Core\Channel\Events\ContentPushFailed;
-use Smolblog\Core\Channel\Events\ContentPushStarted;
 use Smolblog\Core\Channel\Events\ContentPushSucceeded;
 use Smolblog\Core\Channel\Services\ContentPushException;
 use Smolblog\Core\Content\Entities\Content;
-use Smolblog\Core\Content\Entities\ContentType;
-use Smolblog\Foundation\Value\Fields\Markdown;
 use Smolblog\Core\Content\Types\Note\Note;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Foundation\Value\Fields\DateIdentifier;
-use Smolblog\Foundation\Value\Fields\Identifier;
-use Smolblog\Foundation\Value\Fields\Url;
-use Smolblog\Test\ChannelTestBase;
+use Smolblog\Core\Test\ChannelTestBase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class PushContentToChannelTest extends ChannelTestBase {
 	public function testHappyPathWithCustom() {
 		$content = new Content(
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'testmock',
@@ -39,7 +36,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -47,9 +44,9 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$this->perms->method('canPushContent')->willReturn(true);
 
 		$this->handlerMock->expects($this->once())->method('pushContentToChannel')->with(
-			content: $content,
-			channel: $channel,
-			userId: $content->userId,
+			content: $this->valueObjectEquals($content),
+			channel: $this->valueObjectEquals($channel),
+			userId: $this->uuidEquals($content->userId),
 		);
 
 		$this->app->execute($command);
@@ -60,6 +57,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'asyncmock',
@@ -69,14 +67,14 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		);
 		$entry = new ContentChannelEntry(
 			contentId: $content->id,
-			channelId: $channel->getId(),
-			url: new Url('https://test.smol.blog/post/test'),
+			channelId: $channel->id,
+			url: HttpMessageFactory::uri('https://test.smol.blog/post/test'),
 			details: [ 'post_id' => '12345' ],
 		);
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -88,22 +86,22 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$this->expectEvents([
 			new ContentPushedToChannel(
 				content: $content,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				userId: $content->userId,
-				entityId: $entry->getId(),
+				entityId: $entry->id,
 				aggregateId: $content->siteId,
 				processId: $this->randomId(),
 			),
 			new ContentPushSucceeded(
 				contentId: $content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $this->randomId(),
 				userId: $content->userId,
-				entityId: $entry->getId(),
+				entityId: $entry->id,
 				aggregateId: $content->siteId,
-				url: new Url('https://test.smol.blog/post/test'),
+				url: HttpMessageFactory::uri('https://test.smol.blog/post/test'),
 				details: [ 'post_id' => '12345' ],
-			)
+			),
 		], checkProcess: true);
 
 		$this->app->execute($command);
@@ -114,6 +112,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'asyncmock',
@@ -124,7 +123,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -139,20 +138,20 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$this->expectEvents([
 			new ContentPushedToChannel(
 				content: $content,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				userId: $content->userId,
 				aggregateId: $content->siteId,
 				processId: $this->randomId(),
 			),
 			new ContentPushFailed(
 				contentId: $content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $this->randomId(),
 				userId: $content->userId,
 				aggregateId: $content->siteId,
 				message: 'Authentication expired',
 				details: ['code' => 403],
-			)
+			),
 		], checkProcess: true);
 
 		$this->app->execute($command);
@@ -165,6 +164,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'projectionmock',
@@ -174,14 +174,14 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		);
 		$entry = new ContentChannelEntry(
 			contentId: $content->id,
-			channelId: $channel->getId(),
-			url: new Url('https://test.smol.blog/post/test'),
+			channelId: $channel->id,
+			url: HttpMessageFactory::uri('https://test.smol.blog/post/test'),
 			details: [ 'post_id' => '12345' ],
 		);
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -192,24 +192,24 @@ final class PushContentToChannelTest extends ChannelTestBase {
 
 		$pushEvent = new ContentPushedToChannel(
 			content: $content,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			userId: $content->userId,
-			entityId: $entry->getId(),
+			entityId: $entry->id,
 			aggregateId: $content->siteId,
-			processId: new DateIdentifier(),
+			processId: UuidFactory::date(),
 		);
 		$this->expectEvents([
 			$pushEvent,
 			new ContentPushSucceeded(
 				contentId: $content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $this->randomId(),
 				userId: $content->userId,
-				entityId: $entry->getId(),
+				entityId: $entry->id,
 				aggregateId: $content->siteId,
-				url: new Url('https://test.smol.blog/post/test'),
+				url: HttpMessageFactory::uri('https://test.smol.blog/post/test'),
 				details: [ 'post_id' => '12345' ],
-			)
+			),
 		], checkProcess: true);
 
 		$this->app->execute($command);
@@ -220,6 +220,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'projectionmock',
@@ -230,7 +231,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -244,7 +245,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 
 		$pushEvent = new ContentPushedToChannel(
 			content: $content,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			userId: $content->userId,
 			aggregateId: $content->siteId,
 			processId: $this->randomId(),
@@ -253,13 +254,13 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			$pushEvent,
 			new ContentPushFailed(
 				contentId: $content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $this->randomId(),
 				userId: $content->userId,
 				aggregateId: $content->siteId,
 				message: 'Authentication expired',
 				details: ['code' => 403],
-			)
+			),
 		], checkProcess: true);
 
 		$this->app->execute($command);
@@ -270,6 +271,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'asyncmock',
@@ -280,7 +282,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn(null);
@@ -298,6 +300,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'asyncmock',
@@ -308,7 +311,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);
@@ -326,6 +329,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 			body: new Note(text: new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
+			id: $this->randomId(),
 		);
 		$channel = new BasicChannel(
 			handler: 'asyncmock',
@@ -336,7 +340,7 @@ final class PushContentToChannelTest extends ChannelTestBase {
 		$command = new PushContentToChannel(
 			contentId: $content->id,
 			userId: $content->userId,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 		);
 
 		$this->contentRepo->method('contentById')->willReturn($content);

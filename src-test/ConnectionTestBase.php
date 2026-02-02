@@ -1,14 +1,15 @@
 <?php
 
-namespace Smolblog\Test;
+namespace Smolblog\Core\Test;
 
+use Cavatappi\Test\ModelTest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Smolblog\Core\Channel\Data\ChannelRepo;
 use Smolblog\Core\Connection\Data\AuthRequestStateRepo;
 use Smolblog\Core\Connection\Data\ConnectionRepo;
 use Smolblog\Core\Connection\Services\ConnectionHandler;
 use Smolblog\Core\Permissions\GlobalPermissionsService;
-use Smolblog\Test\ModelTest;
 
 /**
  * Provices a ConnectionHandler with key 'testmock'
@@ -19,14 +20,15 @@ abstract class ConnectionHandlerTestBase implements ConnectionHandler {
 	}
 }
 
+#[AllowMockObjectsWithoutExpectations]
 abstract class ConnectionTestBase extends ModelTest {
-	const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
+	public const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
 
-	protected AuthRequestStateRepo & MockObject $stateRepo;
-	protected ChannelRepo & MockObject $channels;
-	protected ConnectionRepo & MockObject $connections;
-	protected ConnectionHandler & MockObject $handler;
-	protected GlobalPermissionsService & MockObject $globalPerms;
+	protected AuthRequestStateRepo&MockObject $stateRepo;
+	protected ChannelRepo&MockObject $channels;
+	protected ConnectionRepo&MockObject $connections;
+	protected ConnectionHandler&MockObject $handler;
+	protected GlobalPermissionsService&MockObject $globalPerms;
 
 	protected function createMockServices(): array {
 		$this->stateRepo = $this->createMock(AuthRequestStateRepo::class);

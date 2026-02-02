@@ -2,14 +2,14 @@
 
 namespace Smolblog\Core\Channel\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Channel\Entities\BasicChannel;
 use Smolblog\Core\Channel\Events\ChannelAddedToSite;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Test\ChannelTestBase;
+use Smolblog\Core\Test\ChannelTestBase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class AddChannelToSiteTest extends ChannelTestBase {
 	public function testAuthorizedIfUsersMatchAndPermissioned() {
 		$siteId = $this->randomId();
@@ -22,20 +22,20 @@ final class AddChannelToSiteTest extends ChannelTestBase {
 			userId: $userId,
 		);
 
-		$this->channels->expects($this->once())->method('channelById')->
-			with(channelId: $this->objectEquals($channel->getId()))->
-			willReturn($channel);
+		$this->channels->expects($this->once())->method('channelById')
+			->with(channelId: $this->uuidEquals($channel->id))
+			->willReturn($channel);
 		$this->perms->method('canManageChannels')->willReturn(true);
 
 		$command = new AddChannelToSite(
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			siteId: $siteId,
 			userId: $userId,
 		);
 
 		$this->expectEvent(new ChannelAddedToSite(
 			aggregateId: $siteId,
-			entityId: $channel->getId(),
+			entityId: $channel->id,
 			userId: $userId,
 		));
 
@@ -52,20 +52,20 @@ final class AddChannelToSiteTest extends ChannelTestBase {
 			details: [],
 		);
 
-		$this->channels->expects($this->once())->method('channelById')->
-			with(channelId: $this->objectEquals($channel->getId()))->
-			willReturn($channel);
+		$this->channels->expects($this->once())->method('channelById')
+			->with(channelId: $this->uuidEquals($channel->id))
+			->willReturn($channel);
 		$this->perms->method('canManageChannels')->willReturn(true);
 
 		$command = new AddChannelToSite(
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			siteId: $siteId,
 			userId: $userId,
 		);
 
 		$this->expectEvent(new ChannelAddedToSite(
 			aggregateId: $siteId,
-			entityId: $channel->getId(),
+			entityId: $channel->id,
 			userId: $userId,
 		));
 
@@ -83,13 +83,13 @@ final class AddChannelToSiteTest extends ChannelTestBase {
 			userId: $this->randomId(),
 		);
 
-		$this->channels->expects($this->once())->method('channelById')->
-			with(channelId: $this->objectEquals($channel->getId()))->
-			willReturn($channel);
+		$this->channels->expects($this->once())->method('channelById')
+			->with(channelId: $this->uuidEquals($channel->id))
+			->willReturn($channel);
 		$this->perms->method('canManageChannels')->willReturn(true);
 
 		$command = new AddChannelToSite(
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			siteId: $siteId,
 			userId: $userId,
 		);
@@ -111,13 +111,13 @@ final class AddChannelToSiteTest extends ChannelTestBase {
 			userId: $userId,
 		);
 
-		$this->channels->expects($this->once())->method('channelById')->
-			with(channelId: $this->objectEquals($channel->getId()))->
-			willReturn($channel);
+		$this->channels->expects($this->once())->method('channelById')
+			->with(channelId: $this->uuidEquals($channel->id))
+			->willReturn($channel);
 		$this->perms->method('canManageChannels')->willReturn(false);
 
 		$command = new AddChannelToSite(
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			siteId: $siteId,
 			userId: $userId,
 		);

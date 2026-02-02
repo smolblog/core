@@ -2,26 +2,25 @@
 
 namespace Smolblog\Core\Content\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\InvalidValueProperties;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Events\ContentCreated;
-use Smolblog\Core\Site\Entities\UserSitePermissions;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\InvalidValueProperties;
-use Smolblog\Test\ContentTestBase;
-use Smolblog\Test\TestCustomContentExtension;
-use Smolblog\Test\TestCustomContentType;
-use Smolblog\Test\TestDefaultContentExtension;
-use Smolblog\Test\TestDefaultContentType;
-use Smolblog\Test\TestEventsContentType;
-use Smolblog\Test\TestEventsContentTypeCreated;
+use Smolblog\Core\Test\ContentTestBase;
+use Smolblog\Core\Test\TestCustomContentExtension;
+use Smolblog\Core\Test\TestCustomContentType;
+use Smolblog\Core\Test\TestDefaultContentExtension;
+use Smolblog\Core\Test\TestDefaultContentType;
+use Smolblog\Core\Test\TestEventsContentType;
+use Smolblog\Core\Test\TestEventsContentTypeCreated;
 
+#[AllowMockObjectsWithoutExpectations]
 final class CreateContentTest extends ContentTestBase {
 	public function testTypeWithDefaultService() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$command = new CreateContent(
@@ -36,8 +35,8 @@ final class CreateContentTest extends ContentTestBase {
 		$this->perms->method('canCreateContent')->willReturn(true);
 
 		$this->customExtensionService->expects($this->once())->method('create')->with(
-			command: $command,
-			contentId: $contentId,
+			command: $this->valueObjectEquals($command),
+			contentId: $this->uuidEquals($contentId),
 		);
 		$this->expectEvent(new ContentCreated(
 			body: $command->body,
@@ -52,8 +51,8 @@ final class CreateContentTest extends ContentTestBase {
 
 	public function testTypeWithDefaultServiceAndCustomEvents() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$command = new CreateContent(
@@ -68,8 +67,8 @@ final class CreateContentTest extends ContentTestBase {
 		$this->perms->method('canCreateContent')->willReturn(true);
 
 		$this->customExtensionService->expects($this->once())->method('create')->with(
-			command: $command,
-			contentId: $contentId,
+			command: $this->valueObjectEquals($command),
+			contentId: $this->uuidEquals($contentId),
 		);
 		$event = new TestEventsContentTypeCreated(
 			body: $command->body,
@@ -78,7 +77,7 @@ final class CreateContentTest extends ContentTestBase {
 			entityId: $contentId,
 			extensions: $extensions,
 		);
-		$this->assertObjectEquals(
+		$this->assertEquals(
 			new Content(
 				body: $command->body,
 				siteId: $command->siteId,
@@ -95,8 +94,8 @@ final class CreateContentTest extends ContentTestBase {
 
 	public function testTypeWithCustomService() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$command = new CreateContent(
@@ -111,12 +110,12 @@ final class CreateContentTest extends ContentTestBase {
 		$this->perms->method('canCreateContent')->willReturn(true);
 
 		$this->customContentService->expects($this->once())->method('create')->with(
-			command: $command,
-			contentId: $contentId,
+			command: $this->valueObjectEquals($command),
+			contentId: $this->uuidEquals($contentId),
 		);
 		$this->customExtensionService->expects($this->once())->method('create')->with(
-			command: $command,
-			contentId: $contentId,
+			command: $this->valueObjectEquals($command),
+			contentId: $this->uuidEquals($contentId),
 		);
 
 		$this->app->execute($command);

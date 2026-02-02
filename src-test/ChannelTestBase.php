@@ -1,26 +1,22 @@
 <?php
 
-namespace Smolblog\Test;
+namespace Smolblog\Core\Test;
 
+use Cavatappi\Foundation\Job\Job;
+use Cavatappi\Foundation\Job\JobManager;
+use Cavatappi\Test\ModelTest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Smolblog\Core\Channel\Data\ChannelRepo;
-use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Entities\ChannelHandlerConfiguration;
 use Smolblog\Core\Channel\Jobs\ContentPushJob;
 use Smolblog\Core\Channel\Services\AsyncChannelHandler;
 use Smolblog\Core\Channel\Services\ChannelHandler;
-use Smolblog\Core\Channel\Services\ChannelHandlerRegistry;
-use Smolblog\Core\Channel\Services\DefaultChannelHandler;
 use Smolblog\Core\Channel\Services\ProjectionChannelHandler;
 use Smolblog\Core\Content\Data\ContentRepo;
-use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Permissions\GlobalPermissionsService;
 use Smolblog\Core\Permissions\SitePermissionsService;
-use Smolblog\Foundation\Service\Job\JobManager;
-use Smolblog\Foundation\Value\Fields\Identifier;
-use Smolblog\Foundation\Value\Jobs\Job;
-use Smolblog\Test\ModelTest;
 
 /**
  * Provices a ChannelHandler with key 'testmock'
@@ -47,9 +43,9 @@ abstract class DefaultChannelHandlerTestBase extends AsyncChannelHandler {
 
 	public function __construct(
 		JobManager $jobManager,
-		EventDispatcherInterface $eventBus
+		EventDispatcherInterface $eventBus,
 	) {
-		$jobManagerProxy = new class($jobManager) implements JobManager {
+		$jobManagerProxy = new class ($jobManager) implements JobManager {
 			public function __construct(private JobManager $actual) {}
 			public function enqueue(Job $job): void {
 				if (get_class($job) === ContentPushJob::class) {
@@ -76,16 +72,17 @@ abstract class ProjectionChannelHandlerTestBase extends ProjectionChannelHandler
 	}
 }
 
+#[AllowMockObjectsWithoutExpectations]
 abstract class ChannelTestBase extends ModelTest {
-	const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
+	public const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
 
-	protected ChannelRepo & MockObject $channels;
-	protected SitePermissionsService & MockObject $perms;
-	protected GlobalPermissionsService & MockObject $globalPerms;
-	protected ContentRepo & MockObject $contentRepo;
-	protected ChannelHandlerTestBase & MockObject $handlerMock;
-	protected DefaultChannelHandlerTestBase & MockObject $defaultHandlerMock;
-	protected ProjectionChannelHandlerTestBase & MockObject $defaultProjectionMock;
+	protected ChannelRepo&MockObject $channels;
+	protected SitePermissionsService&MockObject $perms;
+	protected GlobalPermissionsService&MockObject $globalPerms;
+	protected ContentRepo&MockObject $contentRepo;
+	protected ChannelHandlerTestBase&MockObject $handlerMock;
+	protected DefaultChannelHandlerTestBase&MockObject $defaultHandlerMock;
+	protected ProjectionChannelHandlerTestBase&MockObject $defaultProjectionMock;
 
 	protected function createMockServices(): array {
 		$this->channels = $this->createMock(ChannelRepo::class);
@@ -114,7 +111,7 @@ abstract class ChannelTestBase extends ModelTest {
 			->onlyMethods(['push'])
 			->setConstructorArgs([
 				'jobManager' => $this->app->container->get(JobManager::class),
-				'eventBus' => $this->app->container->get(EventDispatcherInterface::class)
+				'eventBus' => $this->app->container->get(EventDispatcherInterface::class),
 			])
 			->getMock();
 

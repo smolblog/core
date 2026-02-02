@@ -1,7 +1,9 @@
 <?php
 
-namespace Smolblog\Test;
+namespace Smolblog\Core\Test;
 
+use Cavatappi\Test\ModelTest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Smolblog\Core\Content\Data\ContentRepo;
@@ -15,12 +17,12 @@ use Smolblog\Core\Content\Services\ContentTypeService;
 use Smolblog\Core\Content\Services\DefaultContentExtensionService;
 use Smolblog\Core\Content\Services\DefaultContentTypeService;
 use Smolblog\Core\Permissions\SitePermissionsService;
-use Smolblog\Core\Site\Data\SiteRepo;
-use Smolblog\Test\ModelTest;
 
 abstract readonly class TestContentTypeBase extends ContentType {
 	public function __construct(public string $title, public string $body) {}
-	public function getTitle(): string { return $this->title; }
+	public function getTitle(): string {
+		return $this->title;
+	}
 }
 
 /**
@@ -42,9 +44,9 @@ final readonly class TestDefaultContentType extends TestContentTypeBase {
 /**
  * Provides a ContentType with key 'testevents'
  */
-final readonly class TestEventsContentTypeCreated extends ContentCreated {}
-final readonly class TestEventsContentTypeUpdated extends ContentUpdated {}
-final readonly class TestEventsContentTypeDeleted extends ContentDeleted {}
+final class TestEventsContentTypeCreated extends ContentCreated {}
+final class TestEventsContentTypeUpdated extends ContentUpdated {}
+final class TestEventsContentTypeDeleted extends ContentDeleted {}
 final class TestEventsContentTypeService extends DefaultContentTypeService {
 	public static function getConfiguration(): ContentTypeConfiguration {
 		return new ContentTypeConfiguration(
@@ -103,13 +105,14 @@ final readonly class TestCustomContentExtension extends ContentExtension {
 	public function __construct(public string $metaval) {}
 }
 
+#[AllowMockObjectsWithoutExpectations]
 abstract class ContentTestBase extends ModelTest {
-	const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
+	public const INCLUDED_MODELS = [\Smolblog\Core\Model::class];
 
-	protected TestCustomContentTypeService & MockObject $customContentService;
-	protected TestCustomContentExtensionService & MockObject $customExtensionService;
-	protected ContentRepo & MockObject $contentRepo;
-	protected SitePermissionsService & MockObject $perms;
+	protected TestCustomContentTypeService&MockObject $customContentService;
+	protected TestCustomContentExtensionService&MockObject $customExtensionService;
+	protected ContentRepo&MockObject $contentRepo;
+	protected SitePermissionsService&MockObject $perms;
 
 	protected function createMockServices(): array {
 		$this->customContentService = $this->createMock(TestCustomContentTypeService::class);
@@ -122,7 +125,7 @@ abstract class ContentTestBase extends ModelTest {
 			TestEventsContentTypeService::class => ['eventBus' => EventDispatcherInterface::class],
 			TestCustomContentTypeService::class => fn() => $this->customContentService,
 			TestDefaultContentExtensionService::class => [],
-			TestCustomContentExtensionService::class => fn () => $this->customExtensionService,
+			TestCustomContentExtensionService::class => fn() => $this->customExtensionService,
 			ContentRepo::class => fn() => $this->contentRepo,
 			SitePermissionsService::class => fn() => $this->perms,
 			...parent::createMockServices(),

@@ -2,18 +2,19 @@
 
 namespace Smolblog\Core\Content\Services;
 
+use Cavatappi\Foundation\Registry\ConfiguredRegisterable;
+use Cavatappi\Foundation\Service;
+use Ramsey\Uuid\UuidInterface;
 use Smolblog\Core\Content\Commands\{CreateContent, DeleteContent, UpdateContent};
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Entities\ContentExtensionConfiguration;
-use Smolblog\Foundation\Service\Registry\ConfiguredRegisterable;
-use Smolblog\Foundation\Value\Fields\Identifier;
 
 /**
  * Denotes a service for a particular content extension.
  *
  * Mostly exists to be auto-discovered and added to the registry.
  */
-interface ContentExtensionService extends ConfiguredRegisterable {
+interface ContentExtensionService extends ConfiguredRegisterable, Service {
 	/**
 	 * Get the configuration for this content extension.
 	 *
@@ -25,10 +26,10 @@ interface ContentExtensionService extends ConfiguredRegisterable {
 	 * Create the given content as a new piece of content.
 	 *
 	 * @param CreateContent $command   Content being created.
-	 * @param Identifier    $contentId Definitive ID of the content.
+	 * @param UuidInterface $contentId Definitive ID of the content.
 	 * @return void
 	 */
-	public function create(CreateContent $command, Identifier $contentId): void;
+	public function create(CreateContent $command, UuidInterface $contentId): void;
 
 	/**
 	 * Update the given content to match this version.

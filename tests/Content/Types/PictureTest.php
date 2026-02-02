@@ -2,18 +2,19 @@
 
 namespace Smolblog\Core\Content\Types\Picture;
 
+use Cavatappi\Foundation\Exceptions\InvalidValueProperties;
+use Cavatappi\Foundation\Fields\Markdown;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Content\Entities\ContentType;
-use Smolblog\Foundation\Value\Fields\Markdown;
 use Smolblog\Core\Media\Entities\Media;
 use Smolblog\Core\Media\Entities\MediaType;
-use Smolblog\Foundation\Exceptions\InvalidValueProperties;
-use Smolblog\Foundation\Value\Fields\Url;
 use Smolblog\Core\Test\ContentTypeTest;
 
+#[AllowMockObjectsWithoutExpectations]
 final class PictureTest extends ContentTypeTest {
-	const string TYPE_KEY = 'picture';
-	const string SERVICE_CLASS = PictureService::class;
-	const string TYPE_CLASS = Picture::class;
+	public const string TYPE_KEY = 'picture';
+	public const string SERVICE_CLASS = PictureService::class;
+	public const string TYPE_CLASS = Picture::class;
 
 	protected const CREATE_EVENT = PictureCreated::class;
 	protected const UPDATE_EVENT = PictureUpdated::class;

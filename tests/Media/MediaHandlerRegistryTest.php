@@ -2,22 +2,28 @@
 
 namespace Smolblog\Core\Media\Services;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Container\ContainerInterface;
-use Smolblog\Foundation\Exceptions\ServiceNotRegistered;
-use Smolblog\Test\TestCase;
+use Cavatappi\Foundation\Exceptions\ServiceNotRegistered;
+use Cavatappi\Test\TestCase;
 
 abstract class MediaHandlerRegistryTestHandlerOne implements MediaHandler {
-	public static function getKey(): string { return 'one'; }
+	public static function getKey(): string {
+		return 'one';
+	}
 }
 abstract class MediaHandlerRegistryTestHandlerTwo implements MediaHandler {
-	public static function getKey(): string { return 'two'; }
+	public static function getKey(): string {
+		return 'two';
+	}
 }
 
+#[AllowMockObjectsWithoutExpectations]
 final class MediaHandlerRegistryTest extends TestCase {
-	private MediaHandler & MockObject $mockHandlerOne;
-	private MediaHandler & MockObject $mockHandlerTwo;
-	private ContainerInterface & MockObject $container;
+	private MediaHandler&MockObject $mockHandlerOne;
+	private MediaHandler&MockObject $mockHandlerTwo;
+	private ContainerInterface&MockObject $container;
 
 	protected function setUp(): void {
 		$this->mockHandlerOne = $this->createMock(MediaHandlerRegistryTestHandlerOne::class);
@@ -81,6 +87,6 @@ final class MediaHandlerRegistryTest extends TestCase {
 			->with(MediaHandlerRegistryTestHandlerOne::class)
 			->willReturn($this->mockHandlerOne);
 
-		$this->assertEquals($this->mockHandlerOne, $registry->get('one'));
+		$this->assertTrue($this->mockHandlerOne === $registry->get('one'));
 	}
 }

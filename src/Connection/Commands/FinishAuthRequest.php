@@ -2,17 +2,25 @@
 
 namespace Smolblog\Core\Connection\Commands;
 
-use Smolblog\Foundation\Service\Command\ExpectedResponse;
-use Smolblog\Foundation\Value\Fields\Url;
-use Smolblog\Foundation\Value\Messages\Command;
+use Cavatappi\Foundation\Command\Command;
+use Cavatappi\Foundation\Command\ExpectedResponse;
+use Cavatappi\Foundation\Value\ValueKit;
+use Psr\Http\Message\UriInterface;
 
 /**
  * Command to kick off saving data from an OAuth callback.
  *
  * Handler should return a redirect URL for returning the user to the application.
  */
-#[ExpectedResponse(type: Url::class, name: 'url', description: 'URL to redirect the end-user to.', optional: true)]
-readonly class FinishAuthRequest extends Command {
+#[ExpectedResponse(
+	type: UriInterface::class,
+	name: 'url',
+	description: 'URL to redirect the end-user to.',
+	optional: true,
+)]
+readonly class FinishAuthRequest implements Command {
+	use ValueKit;
+
 	/**
 	 * Create the command
 	 *
@@ -24,7 +32,5 @@ readonly class FinishAuthRequest extends Command {
 		public readonly string $handler,
 		public readonly string $stateKey,
 		public readonly string $code,
-	) {
-		parent::__construct();
-	}
+	) {}
 }

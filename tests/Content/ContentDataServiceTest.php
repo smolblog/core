@@ -2,22 +2,18 @@
 
 namespace Smolblog\Core\Content\Services;
 
-require_once __DIR__ . '/_base.php';
-
-use PHPUnit\Framework\Attributes\TestDox;
+use Cavatappi\Foundation\Fields\Markdown;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Types\Note\Note;
-use Smolblog\Core\Site\Entities\UserSitePermissions;
-use Smolblog\Foundation\Value\Fields\Markdown;
-use Smolblog\Test\ContentTestBase;
-use Smolblog\Test\TestDefaultContentType;
+use Smolblog\Core\Test\ContentTestBase;
 use stdClass;
 
+#[AllowMockObjectsWithoutExpectations]
 final class ContentDataServiceTest extends ContentTestBase {
 	private ContentDataService $service;
 
-	protected function setUp(): void
-	{
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->service = $this->app->container->get(ContentDataService::class);
@@ -29,7 +25,8 @@ final class ContentDataServiceTest extends ContentTestBase {
 		$siteId = $this->randomId();
 
 		$this->contentRepo->expects($this->once())->method('contentList')->with(
-			siteId: $siteId, userId: $userId
+			siteId: $this->uuidEquals($siteId),
+			userId: $this->uuidEquals($userId),
 		);
 
 		$this->service->contentList(siteId: $siteId, userId: $userId);
@@ -41,7 +38,8 @@ final class ContentDataServiceTest extends ContentTestBase {
 		$siteId = $this->randomId();
 
 		$this->contentRepo->expects($this->once())->method('contentList')->with(
-			siteId: $siteId, userId: null
+			siteId: $this->uuidEquals($siteId),
+			userId: null,
 		);
 
 		$this->service->contentList(siteId: $siteId, userId: $userId);
@@ -51,6 +49,7 @@ final class ContentDataServiceTest extends ContentTestBase {
 		$this->perms->method('canEditAllContent')->willReturn(false);
 		$userId = $this->randomId();
 		$content = new Content(
+			id: $this->randomId(),
 			body: new Note(new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $userId,
@@ -59,13 +58,14 @@ final class ContentDataServiceTest extends ContentTestBase {
 		$this->contentRepo->method('contentById')->willReturn($content);
 
 		$result = $this->service->contentById(contentId: $content->id, userId: $userId);
-		$this->assertObjectEquals($content, $result ?? new stdClass());
+		$this->assertValueObjectEquals($content, $result);
 	}
 
 	public function testContentByIdWillReturnAllContentIfPermissioned() {
 		$this->perms->method('canEditAllContent')->willReturn(true);
 		$userId = $this->randomId();
 		$content = new Content(
+			id: $this->randomId(),
 			body: new Note(new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),
@@ -74,13 +74,14 @@ final class ContentDataServiceTest extends ContentTestBase {
 		$this->contentRepo->method('contentById')->willReturn($content);
 
 		$result = $this->service->contentById(contentId: $content->id, userId: $userId);
-		$this->assertObjectEquals($content, $result ?? new stdClass());
+		$this->assertValueObjectEquals($content, $result);
 	}
 
 	public function testContentByIdWillReturnNullIfNotPermissionedAndNotOwnContent() {
 		$this->perms->method('canEditAllContent')->willReturn(false);
 		$userId = $this->randomId();
 		$content = new Content(
+			id: $this->randomId(),
 			body: new Note(new Markdown('This is a drill.')),
 			siteId: $this->randomId(),
 			userId: $this->randomId(),

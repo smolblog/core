@@ -2,18 +2,16 @@
 
 namespace Smolblog\Core\Connection\Services;
 
+use Cavatappi\Foundation\Command\CommandHandler;
+use Cavatappi\Foundation\Command\CommandHandlerService;
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
 use Exception;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Smolblog\Core\Connection\Commands\BeginAuthRequest;
 use Smolblog\Core\Connection\Commands\FinishAuthRequest;
-use Smolblog\Core\Connection\ConnectionHandler;
 use Smolblog\Core\Connection\Data\AuthRequestStateRepo;
 use Smolblog\Core\Connection\Entities\AuthRequestState;
 use Smolblog\Core\Connection\Events\ConnectionEstablished;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Foundation\Exceptions\ServiceNotRegistered;
-use Smolblog\Foundation\Service\Command\CommandHandler;
-use Smolblog\Foundation\Service\Command\CommandHandlerService;
 
 /**
  * Service to handle an OAuth request with an external handler.
@@ -32,8 +30,7 @@ class AuthRequestService implements CommandHandlerService {
 		private AuthRequestStateRepo $stateRepo,
 		private EventDispatcherInterface $eventBus,
 		private ConnectionChannelRefresher $refresher,
-	) {
-	}
+	) {}
 
 	/**
 	 * Start an OAuth request and provide the URL to redirect the user to.
@@ -59,7 +56,6 @@ class AuthRequestService implements CommandHandlerService {
 			returnToUrl: $request->returnToUrl,
 		));
 
-		$request->setReturnValue($data->url);
 		return $data->url;
 	}
 
@@ -87,14 +83,12 @@ class AuthRequestService implements CommandHandlerService {
 			handlerKey: $connection->handlerKey,
 			displayName: $connection->displayName,
 			details: $connection->details,
-			entityId: $connection->getId(),
-			userId: $info->userId
+			userId: $info->userId,
 		));
 
 		// Get the latest list of channels.
 		$this->refresher->refresh(connection: $connection, userId: $info->userId);
 
-		$request->setReturnValue($info->returnToUrl);
 		return $info->returnToUrl;
 	}
 }

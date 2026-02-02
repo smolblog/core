@@ -2,15 +2,14 @@
 
 namespace Smolblog\Core\Site\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\InvalidValueProperties;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Site\Entities\Site;
 use Smolblog\Core\Site\Events\SiteCreated;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\InvalidValueProperties;
-use Smolblog\Foundation\Value\Keypair;
-use Smolblog\Test\SiteTestBase;
+use Smolblog\Core\Test\SiteTestBase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class CreateSiteTest extends SiteTestBase {
 	public function testHappyPath() {
 		$expected = new Site(
@@ -18,11 +17,9 @@ final class CreateSiteTest extends SiteTestBase {
 			key: 'test',
 			displayName: 'Test Site',
 			userId: $this->randomId(),
-			keypair: new Keypair(publicKey: '--PUBLIC-KEY--'),
 			description: 'This is a drill.',
 		);
 
-		$this->keygen->method('generate')->willReturn($expected->keypair);
 		$this->globalPerms->method('canCreateSite')->willReturn(true);
 		$this->repo->method('hasSiteWithID')->willReturn(false);
 		$this->repo->method('hasSiteWithKey')->willReturn(false);
@@ -32,13 +29,12 @@ final class CreateSiteTest extends SiteTestBase {
 			aggregateId: $expected->id,
 			key: 'test',
 			displayName: 'Test Site',
-			keypair: $expected->keypair,
 			description: $expected->description,
 			siteUserId: $expected->userId,
 		);
 
 		$this->expectEvent($event);
-		$this->assertObjectEquals($expected, $event->getSiteObject());
+		$this->assertValueObjectEquals($expected, $event->getSiteObject());
 
 		$this->app->execute(new CreateSite(
 			userId: $expected->userId,
@@ -96,7 +92,7 @@ final class CreateSiteTest extends SiteTestBase {
 		$command = new CreateSite(
 			userId: $this->randomId(),
 			key: 'test',
-			displayName: 'Test Site'
+			displayName: 'Test Site',
 		);
 
 		$this->repo->method('hasSiteWithId')->willReturn(true, true, false);

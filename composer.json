@@ -8,6 +8,11 @@
             "Smolblog\\Core\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Smolblog\\Core\\Test\\": "src-test/"
+        }
+    },
     "authors": [
         {
             "name": "Smolblog",
@@ -19,8 +24,8 @@
         }
     ],
     "require-dev": {
-        "smolblog/test-utils": "^0.5",
-        "smolblog/core-test-utils": "^0.5"
+        "cavatappi/testing": "^0.2",
+        "smolblog/core-test-utils": "^0.6"
     },
     "scripts": {
         "test": "phpunit --testsuite core --no-coverage",
@@ -37,6 +42,6 @@
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
         "elephox/mimey": "^4.0",
-        "smolblog/framework-foundation": "^0.5"
+        "cavatappi/foundation": "^0.2"
     }
 }

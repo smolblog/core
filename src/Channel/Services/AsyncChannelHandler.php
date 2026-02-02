@@ -2,18 +2,17 @@
 
 namespace Smolblog\Core\Channel\Services;
 
+use Cavatappi\Foundation\Factories\UuidFactory;
+use Cavatappi\Foundation\Job\JobManager;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Ramsey\Uuid\UuidInterface;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Channel\Entities\Channel;
 use Smolblog\Core\Channel\Entities\ContentChannelEntry;
 use Smolblog\Core\Channel\Events\ContentPushedToChannel;
 use Smolblog\Core\Channel\Events\ContentPushFailed;
-use Smolblog\Core\Channel\Events\ContentPushStarted;
 use Smolblog\Core\Channel\Events\ContentPushSucceeded;
 use Smolblog\Core\Channel\Jobs\ContentPushJob;
-use Smolblog\Foundation\Service\Job\JobManager;
-use Smolblog\Foundation\Value\Fields\Identifier;
-use Smolblog\Foundation\Value\Fields\RandomIdentifier;
 
 /**
  * Provides a set of good defaults for async channel handlers.
@@ -31,26 +30,25 @@ abstract class AsyncChannelHandler implements ChannelHandler {
 	public function __construct(
 		private JobManager $jobManager,
 		private EventDispatcherInterface $eventBus,
-	) {
-	}
+	) {}
 
 	/**
 	 * Dispatch an async process to complete the push later.
 	 *
-	 * @param Content    $content Content object to push.
-	 * @param Channel    $channel Channel to push object to.
-	 * @param Identifier $userId  ID of the user who initiated the push.
+	 * @param Content       $content Content object to push.
+	 * @param Channel       $channel Channel to push object to.
+	 * @param UuidInterface $userId  ID of the user who initiated the push.
 	 * @return void
 	 */
 	public function pushContentToChannel(
 		Content $content,
 		Channel $channel,
-		Identifier $userId
+		UuidInterface $userId,
 	): void {
-		$processId = new RandomIdentifier();
+		$processId = UuidFactory::random();
 		$startEvent = new ContentPushedToChannel(
 			content: $content,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			userId: $userId,
 			aggregateId: $content->siteId,
 			processId: $processId,
@@ -64,24 +62,24 @@ abstract class AsyncChannelHandler implements ChannelHandler {
 				userId: $userId,
 				processId: $processId,
 				service: static::class,
-			)
+			),
 		);
 	}
 
 	/**
 	 * Handle the ContentPushJob command when it is eventually executed.
 	 *
-	 * @param Content    $content   Content object to push.
-	 * @param Channel    $channel   Channel to push object to.
-	 * @param Identifier $userId    ID of the user who initiated the push.
-	 * @param Identifier $processId ID of this particular push process.
+	 * @param Content       $content   Content object to push.
+	 * @param Channel       $channel   Channel to push object to.
+	 * @param UuidInterface $userId    ID of the user who initiated the push.
+	 * @param UuidInterface $processId ID of this particular push process.
 	 * @return void
 	 */
 	public function completeContentPush(
 		Content $content,
 		Channel $channel,
-		Identifier $userId,
-		Identifier $processId
+		UuidInterface $userId,
+		UuidInterface $processId,
 	): void {
 		try {
 			$result = $this->push(
@@ -93,7 +91,7 @@ abstract class AsyncChannelHandler implements ChannelHandler {
 		} catch (ContentPushException $exc) {
 			$this->eventBus->dispatch(new ContentPushFailed(
 				contentId: $content->id,
-				channelId: $channel->getId(),
+				channelId: $channel->id,
 				processId: $processId,
 				message: $exc->getMessage(),
 				userId: $userId,
@@ -105,7 +103,7 @@ abstract class AsyncChannelHandler implements ChannelHandler {
 
 		$this->eventBus->dispatch(new ContentPushSucceeded(
 			contentId: $content->id,
-			channelId: $channel->getId(),
+			channelId: $channel->id,
 			processId: $processId,
 			userId: $userId,
 			aggregateId: $content->siteId,
@@ -119,16 +117,16 @@ abstract class AsyncChannelHandler implements ChannelHandler {
 	 *
 	 * @throws ContentPushFailure On failure.
 	 *
-	 * @param Content    $content   Content object to push.
-	 * @param Channel    $channel   Channel to push object to.
-	 * @param Identifier $userId    ID of the user who initiated the push.
-	 * @param Identifier $processId ID of this particular push process.
+	 * @param Content       $content   Content object to push.
+	 * @param Channel       $channel   Channel to push object to.
+	 * @param UuidInterface $userId    ID of the user who initiated the push.
+	 * @param UuidInterface $processId ID of this particular push process.
 	 * @return ContentChannelEntry Information about the successfully completed push.
 	 */
 	abstract protected function push(
 		Content $content,
 		Channel $channel,
-		Identifier $userId,
-		Identifier $processId
+		UuidInterface $userId,
+		UuidInterface $processId,
 	): ContentChannelEntry;
 }

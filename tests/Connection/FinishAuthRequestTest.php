@@ -2,19 +2,19 @@
 
 namespace Smolblog\Core\Connection\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
+use Cavatappi\Foundation\Exceptions\ServiceNotRegistered;
+use Cavatappi\Foundation\Factories\UuidFactory;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Connection\Entities\AuthRequestState;
 use Smolblog\Core\Connection\Entities\Connection;
 use Smolblog\Core\Connection\Events\ConnectionEstablished;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Foundation\Exceptions\ServiceNotRegistered;
-use Smolblog\Foundation\Value\Fields\Identifier;
-use Smolblog\Test\ConnectionTestBase;
+use Smolblog\Core\Test\ConnectionTestBase;
 
+#[AllowMockObjectsWithoutExpectations]
 class FinishAuthRequestTest extends ConnectionTestBase {
 	public function testHappyPath() {
-		$userId = Identifier::fromString('8de40399-240e-4e04-bfc5-a7a4bfeffdd5');
+		$userId = UuidFactory::fromString('8de40399-240e-4e04-bfc5-a7a4bfeffdd5');
 		$command = new FinishAuthRequest(
 			handler: 'testmock',
 			stateKey: '0ab41adf-ef37-4b51-bee3-d38bfb1b0b7a',
@@ -39,7 +39,7 @@ class FinishAuthRequestTest extends ConnectionTestBase {
 		$this->stateRepo->method('getAuthRequestState')->willReturn($state);
 		$this->handler->expects($this->once())->method('createConnection')->with(
 			code: '2d6532ef-0def-44fa-b573-5f7ec226934d',
-			info: $state,
+			info: $this->valueObjectEquals($state),
 		)->willReturn($connection);
 
 		$event = new ConnectionEstablished(
@@ -48,10 +48,9 @@ class FinishAuthRequestTest extends ConnectionTestBase {
 			displayName: $connection->displayName,
 			details: $connection->details,
 			userId: $userId,
-			entityId: $connection->getId(),
 		);
 
-		$this->assertObjectEquals($connection, $event->getConnectionObject());
+		$this->assertValueObjectEquals($connection, $event->getConnectionObject());
 		$this->expectEvent($event);
 
 		$redirectUrl = $this->app->execute($command);

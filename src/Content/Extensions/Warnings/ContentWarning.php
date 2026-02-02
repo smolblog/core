@@ -2,15 +2,14 @@
 
 namespace Smolblog\Core\Content\Extensions\Warnings;
 
-use Smolblog\Foundation\Value;
-use Smolblog\Foundation\Value\Traits\SerializableValue;
-use Smolblog\Foundation\Value\Traits\SerializableValueKit;
+use Cavatappi\Foundation\Value;
+use Cavatappi\Foundation\Value\ValueKit;
 
 /**
  * An individual content warning. Can be tagged as a "mention" for minor instances.
  */
-readonly class ContentWarning extends Value implements SerializableValue {
-	use SerializableValueKit;
+readonly class ContentWarning implements Value {
+	use ValueKit;
 
 	/**
 	 * Construct the warning.
@@ -21,6 +20,5 @@ readonly class ContentWarning extends Value implements SerializableValue {
 	public function __construct(
 		public string $content,
 		public bool $mention = false,
-	) {
-	}
+	) {}
 }

@@ -2,26 +2,25 @@
 
 namespace Smolblog\Core\Content\Commands;
 
-require_once __DIR__ . '/_base.php';
-
+use Cavatappi\Foundation\Exceptions\CommandNotAuthorized;
+use Cavatappi\Foundation\Exceptions\EntityNotFound;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Smolblog\Core\Content\Entities\Content;
 use Smolblog\Core\Content\Events\ContentUpdated;
-use Smolblog\Core\Site\Entities\UserSitePermissions;
-use Smolblog\Foundation\Exceptions\CommandNotAuthorized;
-use Smolblog\Foundation\Exceptions\EntityNotFound;
-use Smolblog\Test\ContentTestBase;
-use Smolblog\Test\TestCustomContentExtension;
-use Smolblog\Test\TestCustomContentType;
-use Smolblog\Test\TestDefaultContentExtension;
-use Smolblog\Test\TestDefaultContentType;
-use Smolblog\Test\TestEventsContentType;
-use Smolblog\Test\TestEventsContentTypeUpdated;
+use Smolblog\Core\Test\ContentTestBase;
+use Smolblog\Core\Test\TestCustomContentExtension;
+use Smolblog\Core\Test\TestCustomContentType;
+use Smolblog\Core\Test\TestDefaultContentExtension;
+use Smolblog\Core\Test\TestDefaultContentType;
+use Smolblog\Core\Test\TestEventsContentType;
+use Smolblog\Core\Test\TestEventsContentTypeUpdated;
 
+#[AllowMockObjectsWithoutExpectations]
 final class UpdateContentTest extends ContentTestBase {
 	public function testTypeWithDefaultService() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$userId = $this->randomId();
@@ -43,7 +42,7 @@ final class UpdateContentTest extends ContentTestBase {
 		));
 
 		$this->customExtensionService->expects($this->once())->method('update')->with(
-			command: $command,
+			command: $this->valueObjectEquals($command),
 		);
 		$event = new ContentUpdated(
 			body: $command->body,
@@ -54,7 +53,7 @@ final class UpdateContentTest extends ContentTestBase {
 			extensions: $extensions,
 		);
 		$this->expectEvent($event);
-		$this->assertObjectEquals(
+		$this->assertEquals(
 			new Content(
 				body: $command->body,
 				siteId: $command->siteId,
@@ -62,7 +61,7 @@ final class UpdateContentTest extends ContentTestBase {
 				id: $contentId,
 				extensions: $extensions,
 			),
-			$event->getContentObject()
+			$event->getContentObject(),
 		);
 
 		$this->app->execute($command);
@@ -70,8 +69,8 @@ final class UpdateContentTest extends ContentTestBase {
 
 	public function testTypeWithDefaultServiceAndCustomEvents() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$userId = $this->randomId();
@@ -93,7 +92,7 @@ final class UpdateContentTest extends ContentTestBase {
 		));
 
 		$this->customExtensionService->expects($this->once())->method('update')->with(
-			command: $command,
+			command: $this->valueObjectEquals($command),
 		);
 		$this->expectEvent(new TestEventsContentTypeUpdated(
 			body: $command->body,
@@ -109,8 +108,8 @@ final class UpdateContentTest extends ContentTestBase {
 
 	public function testTypeWithCustomService() {
 		$extensions = [
-			'testdefaultext' => new TestDefaultContentExtension(metaval: 'hello'),
-			'testcustomext' => new TestCustomContentExtension(metaval: 'hello'),
+			new TestDefaultContentExtension(metaval: 'hello'),
+			new TestCustomContentExtension(metaval: 'hello'),
 		];
 		$contentId = $this->randomId();
 		$userId = $this->randomId();
@@ -132,10 +131,10 @@ final class UpdateContentTest extends ContentTestBase {
 		));
 
 		$this->customExtensionService->expects($this->once())->method('update')->with(
-			command: $command,
+			command: $this->valueObjectEquals($command),
 		);
 		$this->customContentService->expects($this->once())->method('update')->with(
-			command: $command,
+			command: $this->valueObjectEquals($command),
 		);
 
 		$this->app->execute($command);
@@ -149,7 +148,7 @@ final class UpdateContentTest extends ContentTestBase {
 			siteId: $this->randomId(),
 			userId: $userId,
 			contentId: $contentId,
-			contentUserId: $userId
+			contentUserId: $userId,
 		);
 
 		$this->contentRepo->method('hasContentWithId')->willReturn(false);
